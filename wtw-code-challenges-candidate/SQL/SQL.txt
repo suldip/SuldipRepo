@@ -1,0 +1,132 @@
+####Example 1 
+
+USE [Canyon]
+GO
+/** Object:  Table [dbo].[Tbl_CampAvailbleDate]    Script Date: 02/09/2023 4:33:07 PM **/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tbl_CampAvailbleDate](
+[CampSiteID] [int] NULL,
+[Date] [smalldatetime] NULL,
+[ReserveDateStatus] [bit] NULL
+) ON [PRIMARY]
+
+GO
+/** Object:  Table [dbo].[Tbl_CampReservation]    Script Date: 02/09/2023 4:33:08 PM **/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tbl_CampReservation](
+[CampSiteID] [int] NULL,
+[ReservationDate] [smalldatetime] NULL,
+[CancleStatus] [bit] NULL
+) ON [PRIMARY]
+
+GO
+/** Object:  Table [dbo].[Tbl_CampSite]    Script Date: 02/09/2023 4:33:08 PM **/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tbl_CampSite](
+[CampSiteID] [int] IDENTITY(1,1) NOT NULL,
+[CampSite] [nvarchar](50) NULL
+) ON [PRIMARY]
+
+GO
+INSERT [dbo].[Tbl_CampAvailbleDate] ([CampSiteID], [Date], [ReserveDateStatus]) VALUES (1, CAST(N'2023-02-09 00:00:00' AS SmallDateTime), 1)
+GO
+INSERT [dbo].[Tbl_CampAvailbleDate] ([CampSiteID], [Date], [ReserveDateStatus]) VALUES (1, CAST(N'2023-02-09 00:00:00' AS SmallDateTime), 1)
+GO
+INSERT [dbo].[Tbl_CampAvailbleDate] ([CampSiteID], [Date], [ReserveDateStatus]) VALUES (1, CAST(N'2023-02-15 00:00:00' AS SmallDateTime), 0)
+GO
+INSERT [dbo].[Tbl_CampAvailbleDate] ([CampSiteID], [Date], [ReserveDateStatus]) VALUES (2, CAST(N'2023-02-09 00:00:00' AS SmallDateTime), 1)
+GO
+INSERT [dbo].[Tbl_CampAvailbleDate] ([CampSiteID], [Date], [ReserveDateStatus]) VALUES (3, CAST(N'2023-02-09 00:00:00' AS SmallDateTime), 1)
+GO
+INSERT [dbo].[Tbl_CampAvailbleDate] ([CampSiteID], [Date], [ReserveDateStatus]) VALUES (2, CAST(N'2023-02-09 00:00:00' AS SmallDateTime), 1)
+GO
+INSERT [dbo].[Tbl_CampAvailbleDate] ([CampSiteID], [Date], [ReserveDateStatus]) VALUES (3, CAST(N'2023-02-12 00:00:00' AS SmallDateTime), 0)
+GO
+INSERT [dbo].[Tbl_CampReservation] ([CampSiteID], [ReservationDate], [CancleStatus]) VALUES (1, CAST(N'2023-02-09 00:00:00' AS SmallDateTime), 0)
+GO
+INSERT [dbo].[Tbl_CampReservation] ([CampSiteID], [ReservationDate], [CancleStatus]) VALUES (2, CAST(N'2023-02-09 00:00:00' AS SmallDateTime), 0)
+GO
+INSERT [dbo].[Tbl_CampReservation] ([CampSiteID], [ReservationDate], [CancleStatus]) VALUES (3, CAST(N'2023-02-09 00:00:00' AS SmallDateTime), 0)
+GO
+SET IDENTITY_INSERT [dbo].[Tbl_CampSite] ON
+
+GO
+INSERT [dbo].[Tbl_CampSite] ([CampSiteID], [CampSite]) VALUES (1, N'Delhi')
+GO
+INSERT [dbo].[Tbl_CampSite] ([CampSiteID], [CampSite]) VALUES (2, N'Jaipur')
+GO
+INSERT [dbo].[Tbl_CampSite] ([CampSiteID], [CampSite]) VALUES (3, N'Haridwar')
+GO
+SET IDENTITY_INSERT [dbo].[Tbl_CampSite] OFF
+GO
+ALTER TABLE [dbo].[Tbl_CampAvailbleDate] ADD  CONSTRAINT [DF_Tbl_CampAvailbleDate_ReserveDateStatus]  DEFAULT ((0)) FOR [ReserveDateStatus]
+GO
+ALTER TABLE [dbo].[Tbl_CampReservation] ADD  CONSTRAINT [DF_Tbl_CampReservation_CancleStatus]  DEFAULT ((0)) FOR [CancleStatus]
+GO
+
+
+####Store Procudre
+Create Proc ProcAddReservation
+(
+@CampSiteID int,
+@ReservationDate smalldatetime,
+@Msg nvarchar(50)output 
+)
+AS
+BEGIN
+	if not exists(Select CampSiteID from Tbl_CampReservation where  CampSiteID=@CampSiteID and ReservationDate=@ReservationDate and isnull(CancleStatus,0)=0 )                          
+	Begin
+		Insert Into Tbl_CampReservation([CampSiteID],[ReservationDate])
+		values(@CampSiteID,@ReservationDate)
+		----For---Status--Change--In---Tbl_CampAvailbleDate
+		Update Tbl_CampAvailbleDate set [ReserveDateStatus]=1 where  CampSiteID=@CampSiteID and Date=@ReservationDate
+		Set @Msg='Record Added....'
+	END 
+	Else
+	Begin
+		Set @Msg='Already Reserved Date.Kindly Select Another Date....'
+	End
+END
+
+####Cancel Reservation
+
+Create Proc ProcCancleReservation
+(
+@CampSiteID int,
+@ReservationDate smalldatetime,
+@Msg nvarchar(50)output 
+)
+AS
+BEGIN
+	if exists(Select CampSiteID from Tbl_CampReservation where  CampSiteID=@CampSiteID and ReservationDate=@ReservationDate and isnull(CancleStatus,0)=0 )                          
+	Begin
+		
+		----For---Status--Change--In---Tbl_CampReservation
+		Update Tbl_CampReservation set CancleStatus=1 where  CampSiteID=@CampSiteID and ReservationDate=@ReservationDate and isnull(CancleStatus,0)=0
+		Set @Msg='Record Cancled....'
+	END 
+	
+END
+
+
+####Duplicate email
+
+SELECT Email, COUNT(Email)
+FROM Employee
+GROUP BY Email
+HAVING COUNT(Email) > 1
+
+
+###Highest Salary
+
+SELECT MAX(SALARY) FROM EMPLOYEE group by Dept
+
